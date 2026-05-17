@@ -5,37 +5,42 @@ import Header from '@/components/Header'
 import YearNav from '@/components/YearNav'
 import MonthCard from '@/components/MonthCard'
 import EventModal from '@/components/EventModal'
+import ImportExcel from '@/components/ImportExcel'
 import { supabase } from '@/lib/supabase'
 import { KaldikEvent, Unit } from '@/types'
 
 type ActiveTab = 'kalender' | 'daftar'
 
 const UNIT_TABS: { label: string; value: Unit | 'SEMUA' }[] = [
-  { label: 'Semua',    value: 'SEMUA'    },
-  { label: 'SDIT',     value: 'SD'       },
-  { label: 'SMPIT',    value: 'SMP'      },
-  { label: 'RQ',       value: 'RQ'       },
-  { label: 'Nasional', value: 'NASIONAL' },
+  { label:'Semua',    value:'SEMUA'    },
+  { label:'SDIT',     value:'SD'       },
+  { label:'SMPIT',    value:'SMP'      },
+  { label:'RQ',       value:'RQ'       },
+  { label:'Nasional', value:'NASIONAL' },
 ]
 
-const UNIT_BADGE: Record<string, string> = {
-  NASIONAL : 'bg-red-100 text-red-700',
-  SD       : 'bg-amber-100 text-amber-700',
-  SMP      : 'bg-blue-100 text-blue-700',
-  RQ       : 'bg-emerald-100 text-emerald-700',
+const UNIT_BADGE: Record<string,string> = {
+  NASIONAL:'bg-red-100 text-red-700',
+  SD      :'bg-amber-100 text-amber-700',
+  SMP     :'bg-blue-100 text-blue-700',
+  RQ      :'bg-emerald-100 text-emerald-700',
 }
+
+const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
 
 export default function AdminPage() {
   const router = useRouter()
-  const [year, setYear]               = useState(new Date().getFullYear())
-  const [events, setEvents]           = useState<KaldikEvent[]>([])
-  const [loading, setLoading]         = useState(true)
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [editEvent, setEditEvent]     = useState<KaldikEvent | null>(null)
-  const [activeTab, setActiveTab]     = useState<ActiveTab>('kalender')
-  const [unitFilter, setUnitFilter]   = useState<Unit | 'SEMUA'>('SEMUA')
-  const [userName, setUserName]       = useState('')
-  const [searchQ, setSearchQ]         = useState('')
+  const [year, setYear]             = useState(new Date().getFullYear())
+  const [events, setEvents]         = useState<KaldikEvent[]>([])
+  const [loading, setLoading]       = useState(true)
+  const [selectedDate, setSelectedDate] = useState<string|null>(null)
+  const [editEvent, setEditEvent]   = useState<KaldikEvent|null>(null)
+  const [activeTab, setActiveTab]   = useState<ActiveTab>('kalender')
+  const [unitFilter, setUnitFilter] = useState<Unit|'SEMUA'>('SEMUA')
+  const [searchQ, setSearchQ]       = useState('')
+  const [userName, setUserName]     = useState('')
+  const [showImport, setShowImport] = useState(false)
+  const [importToast, setImportToast] = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -59,20 +64,32 @@ export default function AdminPage() {
     fetchEvents(year)
   }
 
-  // Filter events untuk tab Daftar
+  function handleImportSuccess(count: number) {
+    fetchEvents(year)
+    setImportToast(`✅ Berhasil import ${count} agenda!`)
+    setTimeout(() => setImportToast(''), 4000)
+  }
+
   const filteredEvents = events
-    .filter(ev => unitFilter === 'SEMUA' || ev.unit === unitFilter)
+    .filter(ev => unitFilter==='SEMUA' || ev.unit===unitFilter)
     .filter(ev => !searchQ || ev.title.toLowerCase().includes(searchQ.toLowerCase()))
 
-  const byMonth: KaldikEvent[][] = Array.from({ length: 12 }, (_, m) =>
-    events.filter(ev => parseInt(ev.date.split('-')[1]) - 1 === m)
+  const byMonth: KaldikEvent[][] = Array.from({ length:12 }, (_,m) =>
+    events.filter(ev => parseInt(ev.date.split('-')[1])-1===m)
   )
-
-  const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
+
+      {/* Toast */}
+      {importToast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50
+                        bg-emerald-700 text-white px-6 py-3 rounded-xl shadow-xl text-sm font-semibold
+                        animate-bounce">
+          {importToast}
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-5">
 
@@ -87,20 +104,24 @@ export default function AdminPage() {
           </p>
         </div>
 
-        {/* Year nav */}
-        <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100">
+        {/* Year + Import button */}
+        <div className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100
+                        flex flex-wrap items-center justify-between gap-3">
           <YearNav year={year} onYearChange={setYear} />
+          <button onClick={() => setShowImport(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white
+                       text-xs font-semibold hover:bg-blue-700 active:scale-95 transition-all shadow-sm">
+            <span>📥</span> Import Excel
+          </button>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex gap-2">
-          {(['kalender', 'daftar'] as ActiveTab[]).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
+        <div className="flex items-center gap-2 flex-wrap">
+          {(['kalender','daftar'] as ActiveTab[]).map(tab=>(
+            <button key={tab} onClick={()=>setActiveTab(tab)}
               className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all
-                ${activeTab === tab
-                  ? 'bg-emerald-700 text-white shadow-sm'
-                  : 'bg-white text-slate-500 border border-slate-200 hover:border-emerald-400'}`}>
-              {tab === 'kalender' ? '🗓 Kalender' : '📋 Daftar Agenda'}
+                ${activeTab===tab?'bg-emerald-700 text-white shadow-sm':'bg-white text-slate-500 border border-slate-200 hover:border-emerald-400'}`}>
+              {tab==='kalender'?'🗓 Kalender':'📋 Daftar Agenda'}
             </button>
           ))}
           <span className="ml-auto text-xs text-slate-400 self-center">
@@ -108,115 +129,85 @@ export default function AdminPage() {
           </span>
         </div>
 
-        {/* ── TAB KALENDER ── */}
-        {activeTab === 'kalender' && (
-          loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="h-48 rounded-2xl bg-slate-200 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {byMonth.map((monthEvents, m) => (
-                <MonthCard key={m} year={year} month={m} events={monthEvents}
-                  onDayClick={setSelectedDate} />
-              ))}
-            </div>
-          )
+        {/* TAB KALENDER */}
+        {activeTab==='kalender'&&(
+          loading
+            ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {Array.from({length:12}).map((_,i)=>(
+                  <div key={i} className="h-48 rounded-2xl bg-slate-200 animate-pulse"/>
+                ))}
+              </div>
+            : <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {byMonth.map((monthEvents,m)=>(
+                  <MonthCard key={m} year={year} month={m} events={monthEvents}
+                    onDayClick={setSelectedDate}/>
+                ))}
+              </div>
         )}
 
-        {/* ── TAB DAFTAR ── */}
-        {activeTab === 'daftar' && (
+        {/* TAB DAFTAR */}
+        {activeTab==='daftar'&&(
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-
-            {/* Filter bar */}
             <div className="px-5 py-4 border-b border-slate-100 space-y-3">
-              {/* Unit tabs */}
               <div className="flex flex-wrap gap-2">
-                {UNIT_TABS.map(t => (
-                  <button key={t.value} onClick={() => setUnitFilter(t.value)}
+                {UNIT_TABS.map(t=>(
+                  <button key={t.value} onClick={()=>setUnitFilter(t.value)}
                     className={`px-3 py-1 rounded-full text-xs font-semibold transition-all
-                      ${unitFilter === t.value
-                        ? 'bg-emerald-700 text-white'
-                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                      ${unitFilter===t.value?'bg-emerald-700 text-white':'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                     {t.label}
                     <span className="ml-1 opacity-60">
-                      ({t.value === 'SEMUA'
-                        ? events.length
-                        : events.filter(e => e.unit === t.value).length})
+                      ({t.value==='SEMUA'?events.length:events.filter(e=>e.unit===t.value).length})
                     </span>
                   </button>
                 ))}
               </div>
-              {/* Search */}
-              <input value={searchQ} onChange={e => setSearchQ(e.target.value)}
+              <input value={searchQ} onChange={e=>setSearchQ(e.target.value)}
                 placeholder="Cari judul agenda..."
                 className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                           focus:outline-none focus:ring-2 focus:ring-emerald-400"/>
             </div>
 
-            {/* Event list */}
-            {loading ? (
-              <div className="p-8 text-center text-slate-400 text-sm">Memuat...</div>
-            ) : filteredEvents.length === 0 ? (
-              <div className="p-8 text-center text-slate-400 text-sm">
-                Belum ada agenda{unitFilter !== 'SEMUA' ? ` untuk unit ${unitFilter}` : ''}
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-50">
-                {filteredEvents.map(ev => {
-                  const [, m, d] = ev.date.split('-')
-                  return (
-                    <div key={ev.id}
-                      className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors group">
+            {loading
+              ? <div className="p-8 text-center text-slate-400 text-sm">Memuat...</div>
+              : filteredEvents.length===0
+                ? <div className="p-8 text-center text-slate-400 text-sm">
+                    Belum ada agenda{unitFilter!=='SEMUA'?` untuk unit ${unitFilter}`:''}
+                  </div>
+                : <div className="divide-y divide-slate-50">
+                    {filteredEvents.map(ev=>{
+                      const [,m,d] = ev.date.split('-')
+                      return (
+                        <div key={ev.id}
+                          className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors group">
+                          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{background:ev.color}}/>
+                          <div className="text-xs text-slate-400 w-16 flex-shrink-0 font-mono">
+                            {parseInt(d)} {BULAN[parseInt(m)-1]}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-700 truncate">{ev.title}</p>
+                            {ev.description&&<p className="text-xs text-slate-400 truncate">{ev.description}</p>}
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0
+                            ${UNIT_BADGE[ev.unit]??'bg-slate-100 text-slate-600'}`}>
+                            {ev.unit}
+                          </span>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={()=>{setEditEvent(ev);setSelectedDate(ev.date)}}
+                              className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs font-semibold hover:bg-blue-100">
+                              Edit
+                            </button>
+                            <button onClick={()=>handleDelete(ev.id)}
+                              className="px-2.5 py-1 rounded-lg bg-red-50 text-red-500 text-xs font-semibold hover:bg-red-100">
+                              Hapus
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+            }
 
-                      {/* Color dot */}
-                      <div className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ background: ev.color }} />
-
-                      {/* Date */}
-                      <div className="text-xs text-slate-400 w-16 flex-shrink-0 font-mono">
-                        {parseInt(d)} {BULAN[parseInt(m)-1]}
-                      </div>
-
-                      {/* Title */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-700 truncate">{ev.title}</p>
-                        {ev.description && (
-                          <p className="text-xs text-slate-400 truncate">{ev.description}</p>
-                        )}
-                      </div>
-
-                      {/* Unit badge */}
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0
-                        ${UNIT_BADGE[ev.unit] ?? 'bg-slate-100 text-slate-600'}`}>
-                        {ev.unit}
-                      </span>
-
-                      {/* Actions */}
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => { setEditEvent(ev); setSelectedDate(ev.date) }}
-                          className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-xs
-                                     font-semibold hover:bg-blue-100 transition-colors">
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(ev.id)}
-                          className="px-2.5 py-1 rounded-lg bg-red-50 text-red-500 text-xs
-                                     font-semibold hover:bg-red-100 transition-colors">
-                          Hapus
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {/* Footer count */}
-            {filteredEvents.length > 0 && (
+            {filteredEvents.length>0&&(
               <div className="px-5 py-3 border-t border-slate-100 text-xs text-slate-400">
                 Menampilkan {filteredEvents.length} dari {events.length} agenda
               </div>
@@ -225,13 +216,21 @@ export default function AdminPage() {
         )}
       </main>
 
-      {/* Modal tambah / edit */}
-      {selectedDate && (
+      {/* Modal tambah/edit */}
+      {selectedDate&&(
         <EventModal
           dateStr={selectedDate}
-          event={editEvent ?? undefined}
-          onClose={() => { setSelectedDate(null); setEditEvent(null) }}
-          onSaved={() => fetchEvents(year)}
+          event={editEvent??undefined}
+          onClose={()=>{setSelectedDate(null);setEditEvent(null)}}
+          onSaved={()=>fetchEvents(year)}
+        />
+      )}
+
+      {/* Import Excel modal */}
+      {showImport&&(
+        <ImportExcel
+          onClose={()=>setShowImport(false)}
+          onSuccess={handleImportSuccess}
         />
       )}
     </div>
