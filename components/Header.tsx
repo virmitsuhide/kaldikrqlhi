@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -31,9 +32,8 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
 
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800
-                          flex items-center justify-center shadow-md">
-            <span className="text-white font-arabic text-lg leading-none">ق</span>
+          <div className="w-10 h-10 relative">
+            <Image src="/RQ.png" alt="Logo RQ LHI" fill className="object-contain" priority />
           </div>
           <div>
             <p className="font-display font-bold text-slate-800 text-sm leading-tight">Kaldik RQ LHI</p>
