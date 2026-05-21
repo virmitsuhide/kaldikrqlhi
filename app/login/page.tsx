@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 type Mode = 'login' | 'forgot' | 'sent'
@@ -42,13 +43,12 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur border border-white/20
-                          flex items-center justify-center mx-auto mb-4 shadow-xl">
-            <span className="font-arabic text-3xl text-white">ق</span>
+          <div className="w-16 h-16 relative mx-auto mb-4">
+            <Image src="/RQ.png" alt="Logo RQ LHI" fill className="object-contain" priority />
           </div>
           <h1 className="font-display font-bold text-white text-xl">Kaldik RQ LHI</h1>
           <p className="text-emerald-300 text-sm mt-1">
-            {mode === 'login'  && 'Login Admin / Guru'}
+            {mode === 'login'  && 'Login Admin / Koordinator'}
             {mode === 'forgot' && 'Reset Password'}
             {mode === 'sent'   && 'Email Terkirim'}
           </p>
