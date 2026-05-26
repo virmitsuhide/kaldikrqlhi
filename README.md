@@ -44,16 +44,40 @@ Buka http://localhost:3000
 
 ## API Endpoint
 
+CORS terbuka (`Access-Control-Allow-Origin: *`) — bisa dipanggil dari web/aplikasi lain.
+
+### 1. Full kalender per tahun
 ```
 GET /api/calendar?year=2026
 GET /api/calendar?year=2026&unit=SMP
 GET /api/calendar?year=2026&unit=RQ,SD&month=3
 ```
+Parameter: `year` (wajib, 2025–2028), `unit` (opsional), `month` (opsional)
 
+### 2. Agenda hari ini
+```
+GET /api/today
+GET /api/today?unit=RQ
+```
+Mengembalikan event yang jatuh pada tanggal hari ini (WIB).
+
+### 3. Agenda yang akan datang
+```
+GET /api/upcoming
+GET /api/upcoming?days=7
+GET /api/upcoming?days=30&unit=SD&limit=10
+```
 Parameter:
-- `year` (wajib): 2025–2028
-- `unit` (opsional): SD | SMP | RQ | NASIONAL | all
-- `month` (opsional): 1–12
+- `days` (opsional, default 30, max 365): jumlah hari ke depan
+- `unit` (opsional): SD | SMP | RQ | NASIONAL | all (NASIONAL selalu disertakan)
+- `limit` (opsional, default 50, max 100)
+
+### Contoh pemakaian dari web lain
+```js
+const res  = await fetch('https://kaldikrqlhi.vercel.app/api/upcoming?days=7')
+const data = await res.json()
+console.log(data.events) // array event 7 hari ke depan
+```
 
 ## Tambah Admin User
 
