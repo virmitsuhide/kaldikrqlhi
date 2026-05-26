@@ -11,10 +11,10 @@ import { KaldikEvent, UnitFilter, filterEvents } from '@/types'
 const LEGEND_ITEMS = [
   { color:'#EF4444', label:'Libur Nasional / Semester / Idul Fitri' },
   { color:'#F97316', label:'Ramadhan' },
-  { color:'#F59E0B', label:'Agenda SDIT LHI' },
+  { color:'#22C55E', label:'Agenda SDIT LHI' },
   { color:'#3B82F6', label:'Agenda SMPIT LHI' },
-  { color:'#10B981', label:'Agenda RQ LHI' },
-  { color:'#8B5CF6', label:'Kegiatan Bersama' },
+  { color:'#F97316', label:'Agenda RQ LHI' },
+  { color:'#8B5CF6', label:'Kegiatan Yayasan' },
 ]
 
 export default function HomePage() {

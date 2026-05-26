@@ -25,9 +25,9 @@ export interface Profile {
 
 export const UNIT_COLORS: Record<Unit, string> = {
   NASIONAL : '#EF4444',
-  SD       : '#F59E0B',
+  SD       : '#22C55E',
   SMP      : '#3B82F6',
-  RQ       : '#10B981',
+  RQ       : '#F97316',
 }
 
 export const TYPE_COLORS: Record<EventType, string> = {
