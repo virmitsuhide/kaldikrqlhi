@@ -37,6 +37,7 @@ export default function AdminPage() {
   const [editEvent, setEditEvent]   = useState<KaldikEvent|null>(null)
   const [activeTab, setActiveTab]   = useState<ActiveTab>('kalender')
   const [unitFilter, setUnitFilter] = useState<Unit|'SEMUA'>('SEMUA')
+  const [monthFilter, setMonthFilter] = useState<number|'SEMUA'>('SEMUA')
   const [searchQ, setSearchQ]       = useState('')
   const [userName, setUserName]     = useState('')
   const [showImport, setShowImport] = useState(false)
@@ -71,6 +72,7 @@ export default function AdminPage() {
   }
 
   const filteredEvents = events
+    .filter(ev => monthFilter==='SEMUA' || parseInt(ev.date.split('-')[1])-1===monthFilter)
     .filter(ev => unitFilter==='SEMUA' || ev.unit===unitFilter)
     .filter(ev => !searchQ || ev.title.toLowerCase().includes(searchQ.toLowerCase()))
 
@@ -149,17 +151,42 @@ export default function AdminPage() {
         {activeTab==='daftar'&&(
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <div className="px-5 py-4 border-b border-slate-100 space-y-3">
+              {/* Filter bulan */}
+              <div className="flex flex-wrap gap-1.5">
+                <button onClick={()=>setMonthFilter('SEMUA')}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all
+                    ${monthFilter==='SEMUA'?'bg-emerald-700 text-white':'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                  Semua Bulan
+                </button>
+                {BULAN.map((b,m)=>{
+                  const count = events.filter(e=>parseInt(e.date.split('-')[1])-1===m).length
+                  return (
+                    <button key={m} onClick={()=>setMonthFilter(m)} disabled={count===0}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all
+                        ${monthFilter===m
+                          ? 'bg-emerald-700 text-white'
+                          : count===0
+                            ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                      {b}
+                      {count>0&&<span className="ml-1 opacity-60">({count})</span>}
+                    </button>
+                  )
+                })}
+              </div>
               <div className="flex flex-wrap gap-2">
-                {UNIT_TABS.map(t=>(
-                  <button key={t.value} onClick={()=>setUnitFilter(t.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-all
-                      ${unitFilter===t.value?'bg-emerald-700 text-white':'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                    {t.label}
-                    <span className="ml-1 opacity-60">
-                      ({t.value==='SEMUA'?events.length:events.filter(e=>e.unit===t.value).length})
-                    </span>
-                  </button>
-                ))}
+                {UNIT_TABS.map(t=>{
+                  const monthEvents = events.filter(e=>monthFilter==='SEMUA'||parseInt(e.date.split('-')[1])-1===monthFilter)
+                  const count = t.value==='SEMUA'?monthEvents.length:monthEvents.filter(e=>e.unit===t.value).length
+                  return (
+                    <button key={t.value} onClick={()=>setUnitFilter(t.value)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all
+                        ${unitFilter===t.value?'bg-emerald-700 text-white':'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                      {t.label}
+                      <span className="ml-1 opacity-60">({count})</span>
+                    </button>
+                  )
+                })}
               </div>
               <input value={searchQ} onChange={e=>setSearchQ(e.target.value)}
                 placeholder="Cari judul agenda..."
